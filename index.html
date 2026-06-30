@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Obj Remover</title>
+  <link rel="stylesheet" href="style.css?v=12" />
+</head>
+<body>
+  <main class="simple-app">
+    <header class="top-header">
+      <div class="brand-row">
+        <div class="brand-badge">OR</div>
+        <h1>Obj Remover</h1>
+      </div>
+      <p class="subtitle">Paint over what you want removed. AI does the rest.</p>
+      <div class="feature-row">
+        <span>Private · runs in your browser</span>
+        <span>·</span>
+        <span>No signup · no uploads</span>
+        <span>·</span>
+        <span id="backendText">Loading model…</span>
+      </div>
+    </header>
+
+    <input id="fileInput" type="file" accept="image/*" hidden />
+
+    <section class="toolbar-card">
+      <div class="toolbar-main">
+        <label class="tool-btn" for="fileInput" title="Open image">Open Image</label>
+        <button id="removeBtn" class="tool-btn primary" disabled>Remove</button>
+        <button id="undoBtn" class="tool-btn" disabled>Undo</button>
+        <button id="clearBtn" class="tool-btn" disabled>Clear</button>
+        <button id="downloadBtn" class="tool-btn" disabled>Download</button>
+      </div>
+      <div class="toolbar-side">
+        <label class="brush-inline" for="brushSize">
+          <span>Brush</span>
+          <input id="brushSize" type="range" min="5" max="160" value="38" />
+          <strong><span id="brushValue">38</span> px</strong>
+        </label>
+      </div>
+    </section>
+
+    <section class="status-line">
+      <span id="statusText">Loading worker…</span>
+      <div class="progress"><div id="progressBar"></div></div>
+    </section>
+
+    <section id="dropZone" class="drop-hint-bar">
+      <strong>Drop image here</strong>
+      <span>PNG, JPG, WEBP</span>
+    </section>
+
+    <section class="canvas-shell">
+      <div id="stage" class="stage empty">
+        <div id="emptyState" class="empty-state">
+          <div class="empty-icon">✦</div>
+          <h2>Open an image to start</h2>
+          <p>Use the brush to paint the object, then click Remove.</p>
+        </div>
+        <canvas id="imageCanvas"></canvas>
+        <canvas id="maskCanvas"></canvas>
+        <div id="brushPreview"></div>
+        <div id="processingOverlay" class="processing-overlay" hidden>
+          <div class="processing-card">
+            <span class="processing-spinner"></span>
+            <strong>Removing…</strong>
+            <small>AI is rebuilding the selected area</small>
+          </div>
+        </div>
+        <div class="canvas-meta top-left" id="imageInfo">No image loaded</div>
+        <div class="canvas-meta top-right" id="maskInfo">Mask: empty</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js?v=12"></script>
+</body>
+</html>

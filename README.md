@@ -72,7 +72,7 @@ http://localhost:5177
 For questions or support, please contact:
 
 **Andy N Le**  
-Facebook: **http://facebook.com/ndle2**  
+Phone: **+84 868 231 181**  
 Email: **me@andyle.one**
 
 ## GitHub
