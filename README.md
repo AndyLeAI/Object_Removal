@@ -21,6 +21,7 @@ Before running the app, place the following files inside the `assets/` folder:
 assets/lama_fp16.onnx
 assets/ort-wasm-simd-threaded.asyncify.wasm
 ```
+## Download lama_fp16.onnx here: [Lama FP16](https://huggingface.co/g-ronimo/lama/resolve/main/lama_fp16.onnx)
 
 ## How to Run
 
