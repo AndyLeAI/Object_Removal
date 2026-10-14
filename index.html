@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Obj Remover</title>
-  <link rel="stylesheet" href="style.css?v=12" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%279%27 fill=%27%238a3ffc%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-size=%2716%27 font-family=%27sans-serif%27 font-weight=%27700%27 fill=%27white%27 text-anchor=%27middle%27%3EOR%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css?v=21" />
 </head>
 <body>
   <main class="simple-app">
@@ -13,13 +14,13 @@
         <div class="brand-badge">OR</div>
         <h1>Obj Remover</h1>
       </div>
-      <p class="subtitle">Paint over what you want removed. AI does the rest.</p>
+      <p class="subtitle">Click an object or paint over it. AI does the rest.</p>
       <div class="feature-row">
-        <span>Private · runs in your browser</span>
+        <span>Private · runs on this Mac</span>
         <span>·</span>
         <span>No signup · no uploads</span>
         <span>·</span>
-        <span id="backendText">Loading model…</span>
+        <span id="backendText">Connecting to backend…</span>
       </div>
     </header>
 
@@ -28,22 +29,46 @@
     <section class="toolbar-card">
       <div class="toolbar-main">
         <label class="tool-btn" for="fileInput" title="Open image">Open Image</label>
-        <button id="removeBtn" class="tool-btn primary" disabled>Remove</button>
-        <button id="undoBtn" class="tool-btn" disabled>Undo</button>
+        <button id="removeBtn" class="tool-btn primary" disabled>Remove Object</button>
+        <button id="undoBtn" class="tool-btn" disabled title="Undo (⌘Z)">Undo</button>
         <button id="clearBtn" class="tool-btn" disabled>Clear</button>
         <button id="downloadBtn" class="tool-btn" disabled>Download</button>
       </div>
       <div class="toolbar-side">
+        <div class="mode-switch" role="group" aria-label="Selection tool">
+          <button id="modeSmart" class="mode-btn active" title="Smart select (S): click an object to mask it">✦ Smart select</button>
+          <button id="modeBrush" class="mode-btn" title="Brush (B): paint the mask by hand">Brush</button>
+        </div>
         <label class="brush-inline" for="brushSize">
           <span>Brush</span>
-          <input id="brushSize" type="range" min="5" max="160" value="38" />
+          <input id="brushSize" type="range" min="5" max="200" value="38" />
           <strong><span id="brushValue">38</span> px</strong>
         </label>
+      </div>
+      <div class="toolbar-side quality-group" role="group" aria-label="Quality">
+        <span class="group-label">Quality</span>
+        <div class="mode-switch">
+          <button class="mode-btn quality-btn active" data-quality="fast" title="Big-LaMa only · seconds">Fast</button>
+          <button class="mode-btn quality-btn" data-quality="sdxl" title="LaMa + SDXL inpainting · ~1 min · 7 GB download">HQ</button>
+          <button class="mode-btn quality-btn" data-quality="flux" title="LaMa + FLUX.1 Fill · several minutes · 12 GB download">Ultra</button>
+        </div>
+        <span id="qualityStatus" class="quality-status"></span>
+        <label class="brush-inline strength-inline" for="strength" hidden>
+          <span>Strength</span>
+          <input id="strength" type="range" min="0.2" max="1" step="0.05" value="0.6" />
+          <strong><span id="strengthValue">0.60</span></strong>
+        </label>
+      </div>
+      <div class="toolbar-side zoom-group" role="group" aria-label="Zoom">
+        <button id="zoomOutBtn" class="zoom-btn" title="Zoom out (−)">−</button>
+        <button id="zoomValueBtn" class="zoom-value" title="Reset to 100% (1)">100%</button>
+        <button id="zoomInBtn" class="zoom-btn" title="Zoom in (+)">+</button>
+        <button id="zoomFitBtn" class="zoom-btn fit" title="Fit to view (0)">Fit</button>
       </div>
     </section>
 
     <section class="status-line">
-      <span id="statusText">Loading worker…</span>
+      <span id="statusText">Connecting…</span>
       <div class="progress"><div id="progressBar"></div></div>
     </section>
 
@@ -53,28 +78,36 @@
     </section>
 
     <section class="canvas-shell">
-      <div id="stage" class="stage empty">
+      <div id="stage" class="stage empty mode-smart">
         <div id="emptyState" class="empty-state">
           <div class="empty-icon">✦</div>
           <h2>Open an image to start</h2>
-          <p>Use the brush to paint the object, then click Remove.</p>
+          <p>Click an object to select it, or paint it with the brush, then click Remove.</p>
         </div>
-        <canvas id="imageCanvas"></canvas>
-        <canvas id="maskCanvas"></canvas>
+        <div id="viewport" class="viewport">
+          <div id="canvasWrap" class="canvas-wrap">
+            <canvas id="imageCanvas"></canvas>
+            <canvas id="maskCanvas"></canvas>
+            <div id="pointLayer" class="point-layer"></div>
+          </div>
+        </div>
         <div id="brushPreview"></div>
         <div id="processingOverlay" class="processing-overlay" hidden>
           <div class="processing-card">
             <span class="processing-spinner"></span>
-            <strong>Removing…</strong>
-            <small>AI is rebuilding the selected area</small>
+            <strong id="processingTitle">Removing…</strong>
+            <small id="processingHint">AI is rebuilding the selected area</small>
+            <div class="processing-progress"><div id="processingBar"></div></div>
+            <small id="processingTime">0 s</small>
           </div>
         </div>
         <div class="canvas-meta top-left" id="imageInfo">No image loaded</div>
         <div class="canvas-meta top-right" id="maskInfo">Mask: empty</div>
+        <div class="canvas-meta bottom-center" id="hintText">Click an object to select it · Shift+click to exclude · Scroll to zoom · Space+drag to pan</div>
       </div>
     </section>
   </main>
 
-  <script src="app.js?v=12"></script>
+  <script type="module" src="js/app.js?v=21"></script>
 </body>
 </html>

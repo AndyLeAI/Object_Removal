@@ -1,29 +1,29 @@
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
-import mimetypes
+"""Start Obj Remover: FastAPI backend + the static UI on http://localhost:5177."""
+import logging
+import os
+import sys
+import threading
 import webbrowser
 
-PORT = 5177
-ROOT = Path(__file__).resolve().parent
-mimetypes.add_type('application/wasm', '.wasm')
+PORT = int(os.environ.get("OBJREMOVER_PORT", "5177"))
 
-class Handler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(ROOT), **kwargs)
 
-    def end_headers(self):
-        self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
-        self.send_header('Cross-Origin-Embedder-Policy', 'require-corp')
-        self.send_header('Cross-Origin-Resource-Policy', 'same-origin')
-        self.send_header('Cache-Control', 'no-store')
-        super().end_headers()
-
-if __name__ == '__main__':
-    url = f'http://localhost:{PORT}'
-    print(f'Obj Remover running at {url}')
-    print('Keep this window open while using the app.')
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     try:
-        webbrowser.open(url)
-    except Exception:
-        pass
-    ThreadingHTTPServer(('localhost', PORT), Handler).serve_forever()
+        import uvicorn
+        from backend.app import create_app
+    except ImportError as err:
+        print(f"Missing dependency ({err}). Run `uv sync` first, or start with ./start_mac.sh", file=sys.stderr)
+        sys.exit(1)
+
+    url = f"http://localhost:{PORT}"
+    print(f"Obj Remover running at {url}")
+    print("Keep this window open while using the app. First start downloads the models (~500 MB).")
+    if os.environ.get("OBJREMOVER_NO_BROWSER") != "1":
+        threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+    uvicorn.run(create_app(), host="127.0.0.1", port=PORT, log_level="warning")
+
+
+if __name__ == "__main__":
+    main()

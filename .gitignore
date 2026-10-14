@@ -1,0 +1,9 @@
+.DS_Store
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+assets/*.onnx
+assets/*.wasm
+models/
+.playwright-mcp/

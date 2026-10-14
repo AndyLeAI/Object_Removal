@@ -2,78 +2,115 @@
 
 **Author:** Andy N Le
 
-ObjRemover is a simple local AI object-removal tool powered by LaMa ONNX. It runs directly in your browser and is designed for local use, with no image upload required.
+ObjRemover is a local AI object-removal tool. Click an object to select it
+(Segment Anything 2.1), or paint over it with the brush, then let Big-LaMa
+rebuild the area. Everything runs on your own machine; images never leave it.
 
-## What’s New in V12
+## What's new in V20
 
-This version fixes the brush opacity display issue:
+- **Smart select**: click an object and the mask is generated for you.
+  Shift+click to exclude an area, click again on a new object to add it.
+- **Zoom and pan**: scroll or pinch to zoom around the cursor, hold Space
+  (or use the middle mouse button) and drag to pan, `0` fits, `1` is 100%.
+- **Stronger inpainting**: Big-LaMa runs at full resolution on a crop around
+  the mask instead of downscaling the whole image to 512 px. Smart-select
+  masks are expanded by about 1% of the image size so the object's edge
+  halo and shadow are removed too, instead of leaving a faded silhouette.
+- **Quality tiers**: *Fast* (Big-LaMa, seconds), *HQ* (LaMa + SDXL
+  inpainting refinement, about a minute) and *Ultra* (LaMa + FLUX.1 Fill,
+  several minutes). HQ and Ultra download their weights on first use.
+- **Brush fix**: the brush preview now matches the painted stroke at every
+  zoom level.
+- Inference moved from browser WASM to a local Python backend using PyTorch
+  on Apple Metal (MPS), CUDA, or CPU.
 
-- Painted mask strokes no longer become visually solid when brush strokes overlap.
-- The internal mask remains fully opaque so the AI model can correctly detect the removal area.
-- The visible mask canvas is displayed at exactly **40% opacity**.
-- The brush preview is synchronized with the painted mask at **40% opacity**.
+## Requirements
 
-## Required Files
+- Python 3.12 or 3.13 and [uv](https://docs.astral.sh/uv/) (`brew install uv`
+  on macOS, or `curl -LsSf https://astral.sh/uv/install.sh | sh`).
+- About 1 GB of disk for the models (downloaded on first start into `models/`
+  and the Hugging Face cache).
+- Apple Silicon Mac (tested on M4 Pro), or any machine with a CUDA GPU or a
+  reasonably fast CPU.
 
-Before running the app, place the following files inside the `assets/` folder:
+## How to run
 
-```text
-assets/lama_fp16.onnx
-assets/ort-wasm-simd-threaded.asyncify.wasm
+### macOS / Linux
+
+```bash
+./start_mac.sh
 ```
-## Download lama_fp16.onnx here: [Lama FP16](https://huggingface.co/g-ronimo/lama/resolve/main/lama_fp16.onnx)
-
-## How to Run
 
 ### Windows
 
-Double-click:
+Double-click `start_windows.bat`.
 
-```text
-start_windows.bat
-```
-
-Then open:
-
-```text
-http://localhost:5177
-```
-
-### Manual Start
-
-Run:
+### Manual start
 
 ```bash
-python server.py
+uv sync
+uv run python server.py
 ```
 
-Then open:
+Then open <http://localhost:5177>. The first start downloads the models
+(~500 MB); the status line in the app shows progress.
 
-```text
-http://localhost:5177
-```
+Environment variables: `OBJREMOVER_PORT` (default 5177), `OBJREMOVER_DEVICE`
+(`mps`, `cuda` or `cpu`; auto-detected), `OBJREMOVER_MODELS_DIR`,
+`OBJREMOVER_NO_BROWSER=1` to skip opening a browser tab.
 
 ## Usage
 
 1. Open or drag and drop an image into the app.
-2. Adjust the brush size.
-3. Paint over the object or area you want to remove.
-4. Click **Remove Object**.
-5. Download the result when processing is complete.
+2. **Smart select** (default): click the object you want gone. Shift+click
+   on areas that should stay. Click another object to add it to the mask.
+3. **Brush** (`B`): paint the mask by hand; `[` and `]` change the size.
+4. Zoom with the scroll wheel or pinch, pan with Space+drag.
+5. Click **Remove Object**. Undo with `⌘Z` / `Ctrl+Z`.
+6. Download the result.
+
+## Models
+
+| Task | Model | Source |
+| --- | --- | --- |
+| Segmentation | SAM 2.1 Hiera base-plus | `facebook/sam2.1-hiera-base-plus` on Hugging Face |
+| Inpainting (Fast) | Big-LaMa (TorchScript, fp32) | github.com/Sanster/models release `add_big_lama` |
+| HQ refinement | SDXL inpainting 0.1, fp16 (~7 GB) | `diffusers/stable-diffusion-xl-1.0-inpainting-0.1` |
+| Ultra refinement | FLUX.1 Fill dev, GGUF Q4_K_S (~7 GB) + T5-XXL GGUF (~3.4 GB) + CLIP-L + VAE | `YarvixPA/FLUX.1-Fill-dev-GGUF`, `city96/t5-v1_1-xxl-encoder-gguf`, `openai/clip-vit-large-patch14`, `ostris/Flex.1-alpha` |
+
+The HQ and Ultra tiers always run Big-LaMa first and then repaint the hole
+with the diffusion model, so the result stays coherent while gaining detail.
+Only one diffusion model is kept in memory at a time; switching tiers unloads
+the other. FLUX.1 [dev] weights are released under the FLUX.1 [dev]
+Non-Commercial License. Make sure you have about 20 GB of free disk space
+before enabling both tiers.
+
+Both load automatically on first start. The segmentation model can be
+swapped by editing `DEFAULT_MODEL_ID` in `backend/segmenter.py` (for example
+`facebook/sam2.1-hiera-large` for the best masks, or `-small` for speed).
+
+## Development
+
+```bash
+uv sync --group dev
+uv run pytest            # backend tests
+node --test js/tests/*.test.js   # viewport math tests
+```
 
 ## Notes
 
-- The app runs locally in your browser.
-- Your images are not uploaded to any server.
-- The FP16 LaMa model must be placed locally in the `assets/` folder.
-- If the browser still shows an older version, press **Ctrl + F5** to hard refresh.
+- Images are processed on localhost only; the browser talks to the local
+  backend on the same machine.
+- Large images are capped at 3072 px on the longer side when loaded.
+- If the browser shows an older version, hard refresh (`Cmd+Shift+R` /
+  `Ctrl+F5`).
 
 ## Support
 
 For questions or support, please contact:
 
-**Andy N Le**  
-Phone: **+84 868 231 181**  
+**Andy N Le**
+Phone: **+84 868 231 181**
 Email: **me@andyle.one**
 
 ## GitHub

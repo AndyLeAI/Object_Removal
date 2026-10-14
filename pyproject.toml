@@ -1,0 +1,27 @@
+[project]
+name = "obj-remover"
+version = "2.0.0"
+description = "Local AI object removal: Segment Anything 2.1 + Big-LaMa on Apple Silicon"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+    "torch>=2.6",
+    "torchvision>=0.21",
+    "transformers>=4.57",
+    "pillow>=10",
+    "numpy>=1.26",
+    "huggingface-hub>=0.25",
+    "diffusers>=0.33",
+    "accelerate>=1.0",
+    "gguf>=0.10",
+    "sentencepiece>=0.2",
+    "protobuf>=4",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
